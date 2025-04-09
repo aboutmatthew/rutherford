@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Card Fullscreen</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Static fullscreen background */
+      .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("Screenshot 2025-04-10 041839.png");
+        background-size: cover;
+        background-position: center;
+        filter: blur(3px);
+        z-index: -1;
+      }
+
+      /* Adjust background for mobile devices */
+      @media (max-width: 768px) {
+        .background {
+          background-position: 50% 30%; /* Adjust vertical position to show more of the center */
+        }
+      }
+
+      /* For very narrow mobile screens, adjust further */
+      @media (max-width: 480px) {
+        .background {
+          background-position: 50% 25%;
+          background-size: auto 100%; /* This ensures height is covered */
+        }
+      }
+
+      /* Overlay to darken background */
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: -1;
+      }
+
+      /* Container for centered content */
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100vh;
+        padding: 20px;
+      }
+
+      /* Animated card in the center */
+      .profile-card {
+        width: 100%;
+        max-width: 800px;
+        background-color: rgba(0, 0, 0, 0.8);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        transform-origin: center;
+        animation: open 1.5s ease-out forwards;
+        opacity: 0;
+        position: relative;
+      }
+
+      .content {
+        padding: 25px;
+        color: white;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .name {
+        font-size: 2.5rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+      }
+
+      .nickname {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+      }
+
+      .stars {
+        font-size: 1.5rem;
+        letter-spacing: 10px;
+        margin: 10px 0;
+      }
+
+      .details {
+        font-size: 1.1rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        border: 1px solid #333;
+      }
+
+      th {
+        background-color: #111;
+        color: white;
+        padding: 12px;
+        text-align: center;
+        font-size: 1.2rem;
+        border: 1px solid #333;
+      }
+
+      td {
+        padding: 12px;
+        text-align: center;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid #333;
+        font-size: 0.9rem;
+      }
+
+      tr:nth-child(odd) td {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 0.8rem;
+      }
+
+      .warning {
+        display: flex;
+        align-items: center;
+        color: #ccc;
+        max-width: 80%;
+      }
+
+      .warning-icon {
+        color: #ff4d4d;
+        margin-right: 5px;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      .website {
+        text-align: right;
+        font-size: 0.9rem;
+      }
+
+      .website a {
+        color: white;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .website a:hover {
+        color: #f0f0f0;
+        text-decoration: underline;
+      }
+
+      /* Music player styles */
+      .music-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 100;
+      }
+
+      .music-btn {
+        background-color: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .music-btn:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .music-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .music-notification {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        display: none;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: fadeInOut 5s forwards;
+      }
+
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        80% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes open {
+        0% {
+          transform: scale(0.1);
+          opacity: 0;
+        }
+        50% {
+          transform: scale(0.5);
+          opacity: 0.5;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      /* Responsive styles */
+      @media (max-width: 768px) {
+        .profile-card {
+          max-width: 100%;
+        }
+
+        .name {
+          font-size: 1.8rem;
+        }
+
+        .nickname {
+          font-size: 1rem;
+        }
+
+        .stars {
+          font-size: 1.2rem;
+        }
+
+        .details {
+          font-size: 0.9rem;
+        }
+
+        th {
+          font-size: 1rem;
+          padding: 8px;
+        }
+
+        td {
+          font-size: 0.8rem;
+          padding: 8px;
+        }
+
+        .footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .warning {
+          margin-bottom: 10px;
+          max-width: 100%;
+        }
+
+        .website {
+          text-align: left;
+          margin-top: 5px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 10px;
+        }
+
+        .content {
+          padding: 15px;
+        }
+
+        .name {
+          font-size: 1.5rem;
+        }
+
+        th,
+        td {
+          padding: 6px;
+          font-size: 0.7rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Static fullscreen background -->
+    <div class="background"></div>
+    <div class="overlay"></div>
+
+    <!-- Audio element for background music -->
+    <audio id="bgMusic" loop>
+      <!-- Replace this URL with your actual music file -->
+      <source
+        src="The-Weeknd-Timeless-Ft-Playboi-Carti-(CoolXclusive.com).mp3"
+        type="audio/mpeg"
+      />
+      Your browser does not support the audio element.
+    </audio>
+
+    <!-- Music notification -->
+    <div id="musicNotification" class="music-notification">
+      Click the music button to enable background music
+    </div>
+
+    <!-- Container for centered content -->
+    <div class="container">
+      <!-- Animated card in the center -->
+      <div class="profile-card">
+        <!-- Music controls -->
+        <div class="music-controls">
+          <button id="playPauseBtn" class="music-btn" title="Play/Pause Music">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        </div>
+
+        <div class="content">
+          <div class="header">
+            <h1 class="name">Matthew Rutherford</h1>
+            <p class="nickname">Matt for short</p>
+            <div class="stars">✦✧✦</div>
+            <p class="details">21+ — INFJ — Taurus</p>
+          </div>
+
+          <table>
+            <tr>
+              <th>Kind of interest</th>
+              <th>Things</th>
+            </tr>
+            <tr>
+              <td>Any things</td>
+              <td>
+                Matcha, strawberry, cats, frogs, AdaLeon, sleep, watching tiktok
+                edits
+              </td>
+            </tr>
+            <tr>
+              <td>Music</td>
+              <td>
+                Kpop, Taylor Swift, Lana Del Rey, NIKI, Daniel Caesar, SZA,
+                Teddy Adhitya, Juicy Luicy, and many more
+              </td>
+            </tr>
+            <tr>
+              <td>Movies/series</td>
+              <td>
+                Scream, Terrifier, Resident Evil, Jennifer's Body, 16 Wishes,
+                The Devil Wears Prada, 13 Going on 30, Dead Poets Society, White
+                Chicks, Twilight, Harry Potter, Pretty Little Liars, Gossip
+                Girl, The Vampire Diaries, The Walking Dead
+              </td>
+            </tr>
+            <tr>
+              <td>Games</td>
+              <td>PUBG, MLBB, Plato, Roblox</td>
+            </tr>
+          </table>
+
+          <div class="footer">
+            <div class="warning">
+              <span class="warning-icon">⚠</span>
+              <span
+                >do not follow if you're won't interact, problematic,
+                homophobic, 02 voters, racist, under 18, and hate my faves</span
+              >
+            </div>
+            <div class="website">
+              <a href="https://neospring.org/@rutherford" target="_blank"
+                >neospring.org</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const audio = document.getElementById("bgMusic");
+        const playPauseBtn = document.getElementById("playPauseBtn");
+        const notification = document.getElementById("musicNotification");
+        let isPlaying = false;
+
+        // Function to update play/pause button icon
+        function updatePlayPauseIcon() {
+          if (isPlaying) {
+            playPauseBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="6" y="4" width="4" height="16"></rect>
+                            <rect x="14" y="4" width="4" height="16"></rect>
+                        </svg>
+                    `;
+            playPauseBtn.title = "Pause Music";
+          } else {
+            playPauseBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    `;
+            playPauseBtn.title = "Play Music";
+          }
+        }
+
+        // Function to toggle play/pause
+        function togglePlayPause() {
+          if (isPlaying) {
+            audio.pause();
+          } else {
+            audio.play().catch((e) => {
+              // Show notification if autoplay is blocked
+              showNotification();
+            });
+          }
+
+          isPlaying = !isPlaying;
+          updatePlayPauseIcon();
+        }
+
+        // Function to show notification
+        function showNotification() {
+          notification.style.display = "block";
+          setTimeout(() => {
+            notification.style.display = "none";
+          }, 5000);
+        }
+
+        // Try to autoplay when page loads
+        audio
+          .play()
+          .then(() => {
+            isPlaying = true;
+            updatePlayPauseIcon();
+          })
+          .catch((e) => {
+            // Autoplay was prevented, show notification after a short delay
+            setTimeout(showNotification, 2000);
+          });
+
+        // Add click event to play/pause button
+        playPauseBtn.addEventListener("click", togglePlayPause);
+
+        // Add click event to document to enable audio on first user interaction
+        document.addEventListener(
+          "click",
+          function firstClick() {
+            if (!isPlaying) {
+              audio
+                .play()
+                .then(() => {
+                  isPlaying = true;
+                  updatePlayPauseIcon();
+                })
+                .catch((e) => {
+                  // Still couldn't play, user might need to click the play button directly
+                });
+            }
+            // Remove this event listener after first click
+            document.removeEventListener("click", firstClick);
+          },
+          { once: true }
+        );
+      });
+    </script>
+  </body>
+</html>
